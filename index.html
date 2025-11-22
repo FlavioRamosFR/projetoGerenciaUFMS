@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ReciclaUrbana — Gestão de Resíduos</title>
+
+  <!-- Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Leaflet-->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-sA+e2N8I7gQbWzXlF9D3YQ2w6fQ6K9mWf5tT0v0yPGA=" crossorigin=""/>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app" id="app" data-theme="">
+    <header class="topbar" role="banner" aria-label="Cabeçalho principal">
+      <a class="brand" href="#home" aria-label="Ir ao início">
+        <div class="logo" aria-hidden="true">R</div>
+        <div>
+          <div>ReciclaUrbana</div>
+          <small class="small">Gestão colaborativa de resíduos</small>
+        </div>
+      </a>
+
+      <nav class="main-nav" role="navigation" aria-label="Navegação principal">
+        <a href="#home" data-anchor>Dashboard</a>
+        <a href="#cadastro" data-anchor>Cadastrar Ponto</a>
+        <a href="#mapa" data-anchor>Mapa</a>
+        <a href="#cooperativas" data-anchor>Cooperativas</a>
+        <a href="#relatorios" data-anchor>Relatórios</a>
+        <a href="#perfil" data-anchor>Perfil</a>
+      </nav>
+
+      <div class="actions" role="region" aria-label="Ações">
+        <div class="search" role="search" aria-hidden="false">
+          <svg width="16" height="16" viewBox="0 0 24 24" style="opacity:.8"><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"></path><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="1.6" fill="none"></circle></svg>
+          <input id="globalSearch" type="search" placeholder="Pesquisar pontos, cooperativas..." aria-label="Pesquisar"/>
+        </div>
+        <button id="themeBtn" class="btn ghost theme-toggle" title="Alternar tema" aria-pressed="false">Tema</button>
+        <a class="btn primary" href="#login">Entrar</a>
+      </div>
+    </header>
+
+    <main>
+      <!-- DASHBOARD -->
+      <section id="home" class="screen" tabindex="0" aria-labelledby="homeTitle">
+        <h1 id="homeTitle">Dashboard</h1>
+        <div class="grid-3" aria-hidden="false">
+          <div class="card top-stat" role="article" aria-label="Pontos cadastrados">
+            <div class="small">Pontos Cadastrados</div>
+            <div class="stat" id="stat-pontos">—</div>
+            <div class="muted">Pontos de coleta ativos</div>
+          </div>
+          <div class="card top-stat" role="article" aria-label="Resíduos coletados">
+            <div class="small">Resíduos Coletados</div>
+            <div class="stat" id="stat-kg">— kg</div>
+            <div class="muted">Total acumulado no mês</div>
+          </div>
+          <div class="card top-stat" role="article" aria-label="Usuários ativos">
+            <div class="small">Usuários Ativos</div>
+            <div class="stat" id="stat-users">—</div>
+            <div class="muted">Cidadãos, catadores e cooperativas</div>
+          </div>
+        </div>
+
+        <div class="panel" style="display:flex;gap:16px;flex-direction:column;">
+          <div style="display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+            <h2 style="margin:0">Últimos Registros</h2>
+            <div class="chip">Atualizado: <strong id="lastUpdate">—</strong></div>
+          </div>
+
+          <div class="table-like" role="table" aria-label="Últimos registros">
+            <div class="row header" role="row"><div>Data</div><div>Local</div><div>Material</div><div>Peso (kg)</div></div>
+            <div id="recordsContainer"></div>
+          </div>
+
+          <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap">
+            <!--<div style="flex:1" class="card">
+              <h3 style="margin-top:0">Tendência de Coletas (mês)</h3>
+              <canvas id="chartColetas" height="160" aria-label="Gráfico de coletas"></canvas>
+            </div>-->
+
+            <div style="width:340px" class="card">
+              <h3 style="margin-top:0">Gamificação — Top 3</h3>
+              <ol id="ranking" style="padding-left:18px;margin:6px 0 0 0"></ol>
+              <p class="muted" style="margin-top:8px">Incentive a participação da comunidade com recompensas.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CADASTRO -->
+      <section id="cadastro" class="screen" tabindex="0" aria-labelledby="cadastroTitle">
+        <h1 id="cadastroTitle">Cadastrar Ponto de Coleta</h1>
+        <div class="two-cols">
+          <form id="pontoForm" class="panel" autocomplete="off" aria-label="Formulário para cadastrar ponto">
+            <div style="display:flex;gap:12px;flex-direction:column">
+              <label class="field">Nome do Ponto
+                <input name="nome" required placeholder="Ex.: Praça Central" />
+              </label>
+
+              <label class="field">Responsável
+                <input name="responsavel" placeholder="Instituição ou pessoa" />
+              </label>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <label class="field">Tipo de Resíduo
+                  <select name="tipo">
+                    <option>Plástico</option>
+                    <option>Papel</option>
+                    <option>Metal</option>
+                    <option>Vidro</option>
+                    <option>Orgânico</option>
+                  </select>
+                </label>
+                <label class="field">Coordenadas (lat, lon)
+                  <input name="coords" id="coordsInput" placeholder="-18.98, -57.66" />
+                </label>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn primary">Salvar Ponto</button>
+                <button type="reset" class="btn ghost">Limpar</button>
+                <button type="button" id="locateMe" class="btn">Localizar-me</button>
+              </div>
+
+              <p class="muted small">Dica: clique no mapa (aba Mapa) para selecionar coordenadas exatas. Os pontos salvos aparecem no mapa.</p>
+            </div>
+          </form>
+
+          <aside class="panel" aria-label="Mapa para seleção">
+            <h3 style="margin-top:0">Mapa — selecione ou gere coordenadas</h3>
+            <div class="map-card card" style="padding:0">
+              <div id="miniMap" style="height:280px"></div>
+            </div>
+            <div class="map-legend" style="margin-top:12px">
+              <div><span class="dot green" aria-hidden="true"></span> Ponto de Coleta</div>
+              <div><span class="dot orange" aria-hidden="true"></span> Cooperativa</div>
+              <div><span class="dot gray" aria-hidden="true"></span> Inativo</div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- MAPA -->
+      <section id="mapa" class="screen" tabindex="0" aria-labelledby="mapaTitle">
+        <h1 id="mapaTitle">Mapa de Pontos de Coleta</h1>
+        <div class="panel">
+          <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+            <div>
+              <p class="muted" style="margin:0">Interaja com o mapa: veja pontos, filtre por tipo e crie novos pontos clicando no mapa.</p>
+            </div>
+            <div style="display:flex;gap:8px">
+              <select id="filterType" aria-label="Filtrar por tipo">
+                <option value="all">Todos os tipos</option>
+                <option value="Plástico">Plástico</option>
+                <option value="Papel">Papel</option>
+                <option value="Metal">Metal</option>
+                <option value="Vidro">Vidro</option>
+                <option value="Orgânico">Orgânico</option>
+              </select>
+              <button id="randomize" class="btn">Exibir Pontos</button>
+            </div>
+          </div>
+
+          <div class="map-card" style="margin-top:12px">
+            <div id="map"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COOPERATIVAS -->
+      <section id="cooperativas" class="screen" tabindex="0" aria-labelledby="coopsTitle">
+        <h1 id="coopsTitle">Cooperativas Registradas</h1>
+        <div class="panel coops">
+          <div class="grid-2">
+            <div class="card">
+              <h3>Cooperativa Verde</h3>
+              <p class="muted">Contato: (67) 99999-0000</p>
+              <p class="small">Endereço: Rua das Flores, 123 — Atendimento: Seg–Sex</p>
+            </div>
+            <div class="card">
+              <h3>ReciclaPlus</h3>
+              <p class="muted">Contato: (67) 98888-1111</p>
+              <p class="small">Endereço: Av. Central, 456 — Oficina de triagem</p>
+            </div>
+          </div>
+
+          <div style="margin-top:12px" class="panel">
+            <h3>Registrar Cooperativa</h3>
+            <form id="coopForm" style="display:flex;gap:12px;flex-wrap:wrap">
+              <input name="nome" placeholder="Nome" required style="padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);flex:1"/>
+              <input name="telefone" placeholder="Telefone" style="padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);width:220px"/>
+              <input name="endereco" placeholder="Endereço" style="padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);flex:1"/>
+              <button class="btn primary" type="submit">Registrar</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- RELATÓRIOS -->
+      <section id="relatorios" class="screen" tabindex="0" aria-labelledby="relTitle">
+        <h1 id="relTitle">Relatórios e Dashboards</h1>
+        <div class="panel">
+          <p class="muted">Geração rápida de relatórios — exportar CSV / PDF no backend (mock).</p>
+          <div style="display:flex;gap:12px;align-items:center;margin-top:10px">
+            <label class="field">Início<input type="date" id="dateStart"></label>
+            <label class="field">Fim<input type="date" id="dateEnd"></label>
+            <button id="genReport" class="btn primary">Gerar</button>
+            <button id="exportCSV" class="btn">Exportar CSV</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 style="margin-top:0">Resumo</h2>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+            <div class="card"><strong>Coletas</strong><p class="stat">432</p></div>
+            <div class="card"><strong>Toneladas</strong><p class="stat">3.452 kg</p></div>
+            <div class="card"><strong>Usuários</strong><p class="stat">1.246</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PERFIL -->
+      <section id="perfil" class="screen" tabindex="0" aria-labelledby="perfilTitle">
+        <h1 id="perfilTitle">Perfil</h1>
+        <div class="panel">
+          <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+            <div class="card" style="min-width:240px">
+              <h3>Flávio Ramos</h3>
+              <p class="muted">Gerente de Projetos</p>
+              <ul class="profile-list" style="margin-top:8px">
+                <li>Email: flavio.ramos@example.com</li>
+                <li>Telefone: (67) 3333-4444</li>
+              </ul>
+            </div>
+
+            <div class="card" style="flex:1">
+              <h3>Configurações</h3>
+              <p class="muted">Notificações: <strong>Ativas</strong></p>
+              <p class="muted">2FA: <strong>Recomendado</strong></p>
+              <div style="margin-top:8px">
+                <button class="btn">Editar Perfil</button>
+                <button class="btn" style="margin-left:8px">Sair</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LOGIN-->
+      <section id="login" class="screen" tabindex="0" aria-labelledby="loginTitle">
+        <div class="panel auth-card" style="max-width:420px;margin:auto">
+          <h1 id="loginTitle">Entrar</h1>
+          <form id="loginForm">
+            <label class="field">Email<input type="email" required/></label>
+            <label class="field">Senha<input type="password" required/></label>
+            <div class="form-actions">
+              <button class="btn primary" type="submit">Entrar</button>
+              <a class="btn ghost" href="#cadastro">Criar conta</a>
+            </div>
+            <p class="muted tiny">Esqueceu a senha? Recurso via backend.</p>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <div class="footer-grid">
+        <div>
+          <h4>ReciclaUrbana</h4>
+          <p class="small">Plataforma de gestão colaborativa de resíduos recicláveis — Projeto piloto.</p>
+        </div>
+        <div>
+          <h4>Contato</h4>
+          <p class="small">suporte@reciclaurbana.org</p>
+          <p class="small">Corumbá-MS</p>
+        </div>
+        <div>
+          <h4>Desenvolvedores</h4>
+          <p class="small">Flávio Ramos · Gabriel Felipe · João Victor · Luciano Esquer</p>
+        </div>
+      </div>
+      <div style="width:100%;text-align:center;margin-top:12px;color:var(--muted)">© 2025 ReciclaUrbana — Protótipo</div>
+    </footer>
+  </div>
+
+  <!-- scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-o9N1j7kY3k2wz3bY6T5a8b8Oq0m2XtmGvM2gZk0u3wY=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="config.js"></script>
+ 
+</body>
+</html>
